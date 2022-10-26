@@ -13,14 +13,19 @@ onMounted(() => {
   const { innerWidth, innerHeight } = window;
   canvasRef.value.width = innerWidth;
   canvasRef.value.height = innerHeight;
-  const player = new Player(canvasRef.value, {
+
+  const ctx = canvasRef.value.getContext('2d');
+  // ctx.fillStyle = '#66ffff';
+  ctx.fillRect(0, 0, innerWidth, innerHeight);
+
+  // 创建玩家
+  const player = new Player(ctx, {
     x: innerWidth / 2,
     y: innerHeight / 2,
     size: 20,
-    color: 'black',
-    speed: 20
+    color: '#66ffff',
+    speed: 0.2
   });
-
   console.log(player, innerWidth, innerHeight);
 });
 </script>

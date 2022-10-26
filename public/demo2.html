@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+	<!-- 实现思路：
+	1.首先为了达到我们想要的效果,可以先创建一个构造函数。
+	2.给构造函数添加对应的属性和方法。
+	3.实例化出多个对象,并且保存在数组中。
+	5.遍历每个对象,实现画圆。
+	6.间隔修改每个球的x,y值。 -->
+	<head>
+		<meta charset="utf-8">
+		<title>Run Ball</title>
+		<style>
+			#canvas {
+				position: absolute;
+				margin-left: 200px;
+				margin-top: 200px;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas" width="400" height="400"></canvas>
+		<script>
+			let canvas = document.getElementById("canvas");
+			let ctx = canvas.getContext('2d');
+			let maxWidth = canvas.width,
+				maxHeight = canvas.height;
+			ctx.fillStyle = "chartreuse"
+			ctx.fillRect(0, 0, maxWidth, maxHeight);
+ 
+			// 产生随机数
+			function getRandomNum(minNum, maxNum) {
+				//arguments.length:获取传入实参的个数
+				switch (arguments.length) {
+					case 0:
+						return 0;
+						break;
+					case 1:
+						return Math.round(Math.random() * minNum + minNum);
+						break;
+					case 2:
+						return Math.round(Math.random() * (maxNum - minNum) + minNum);
+						break;
+				}
+			}
+ 
+			// 创建一个Ball的构造函数
+			function Ball(maxWidth, maxHeight, ctx) {
+				this.ctx = ctx;
+				this.maxWidth = maxWidth;
+				this.maxHeight = maxHeight;
+				//随机半径
+				this.r = getRandomNum(5, 15);
+				//随机x,y坐标
+				this.x = getRandomNum(this.r, this.maxWidth - this.r);
+				this.y = getRandomNum(this.r, this.maxHeight - this.r);
+				//平移速度，正负区间是为了移动方向的多样性
+				this.speedX = getRandomNum(-2, 2);
+				this.speedY = getRandomNum(-2, 2);
+				//颜色随机
+				this.color = `rgba(${getRandomNum(0, 255)}, ${getRandomNum(0, 255)},${getRandomNum(0, 255)}, ${Math.random()})`;
+			}
+			Ball.prototype = {
+				draw: function() {
+					ctx.beginPath();
+					ctx.fillStyle = this.color;
+					ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.closePath();
+				},
+				move: function() {
+					//判断边界值，让圆球始终保证在画面内
+					if (this.x > this.maxWidth - this.r || this.x < this.r) {
+						this.speedX = -this.speedX;
+					}
+					if (this.y > this.maxHeight - this.r || this.y < this.r) {
+						this.speedY = -this.speedY;
+					}
+					this.x += this.speedX;
+					this.y += this.speedY;
+					
+				}
+			}
+			// 创建100个Ball实例
+			let balls = [];
+			for (let i = 0; i < 1; i++) {
+				let newBall = new Ball(maxWidth, maxHeight, ctx);
+				newBall.draw();
+				balls.push(newBall);
+			}
+ 
+			setInterval(() => {
+				//每次画之前都有清除画布
+				ctx.clearRect(0, 0, maxWidth, maxHeight);
+				ctx.fillStyle = "aquamarine"
+				ctx.fillRect(0, 0, maxWidth, maxHeight);
+				for (let j = 0; j < 1; j++) {
+					balls[j].draw(ctx);
+					balls[j].move();
+				}
+			}, 0.1);
+		</script>
+	</body>
+</html>
