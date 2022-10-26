@@ -1,11 +1,10 @@
-
-import { BaseElement } from "./base.ts";
+import { BaseElement, ConfigType } from './base';
 
 export class Player extends BaseElement {
-    // canvars: any
-    constructor(canvars, config) {
-        super(canvars, config);
-        this.canvars = canvars
-        this.draw()
-    }
-} 
+  public canvas: any;
+  constructor(canvas: any, config: ConfigType) {
+    super(canvas, config);
+    this.canvas = canvas;
+    this.draw();
+  }
+}
