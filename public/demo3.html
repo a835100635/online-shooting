@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    canvas {
+      border: 1px solid #ccc;
+      margin: 0 auto;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="mycanvas" width="600" height="600"></canvas>
+
+  <script>
+    var canvas = document.querySelector('#mycanvas')
+    var ctx = canvas.getContext('2d')
+    var ballArr = []
+
+    function Ball(x, y, r) {
+      this.x = x
+      this.y = y
+      this.r = r
+      this.color = getRandom()
+      this.dx = parseInt(Math.random() * 10) - 5
+      this.dy = parseInt(Math.random() * 10) - 5
+      ballArr.push(this)
+    }
+
+    Ball.prototype.update = function () {
+      this.x += this.dx
+      this.y += this.dy
+      this.r -= 0.4
+      if (this.r < 0) {
+        this.remove()
+      }
+    }
+
+    Ball.prototype.remove = function () {
+      for (var i = 0; i < ballArr.length; i++) {
+        if (ballArr[i] == this) {
+          ballArr.splice(i, 1)
+        }
+      }
+    }
+
+    Ball.prototype.render = function () {
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false)
+      ctx.fillStyle = this.color
+      ctx.fill()
+    }
+
+    setInterval(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      for (var i = 0; i < ballArr.length; i++) {
+        ballArr[i].update()
+        if (ballArr[i]) {
+          ballArr[i].render()
+        }
+      }
+    }, 30)
+
+    function getRandom() {
+      var allType = '0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f'
+      var allTypeArr = allType.split(",")
+      var color = "#"
+      for (var i = 0; i < 6; i++) {
+        var random = parseInt(Math.random() * allTypeArr.length)
+        color += allTypeArr[random]
+      }
+      return color
+    }
+
+    canvas.onclick = function (event) {
+      new Ball(event.offsetX, event.offsetY, 10)
+    }
+  </script>
+</body>
+
+</html>
