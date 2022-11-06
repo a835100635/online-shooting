@@ -66,7 +66,7 @@
 
 <body>
     <audio src="bgsound.mp3"></audio>
-    <button class="startgame">开 始 游 戏</button>
+    <button class="startgame">开</button>
     <div class="fs"><span>分数：</span><span class="score">0</span></div>
     <div class="gameover">
         <h1>分数：<span class="Gscore">0</span></h1>
@@ -191,117 +191,124 @@
                 let animateId;
 
                 function animate() {
+                    setTimeout(() => {
+                        flag = false
+                    }, 4000)
                     if (flag) requestAnimationFrame(animate);
                     // 填充背景颜色
                     ctx.fillStyle = 'rgba(0, 0, 0, .1)';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     // 创建玩家
                     let player = new Player(canvas.width / 2, canvas.height / 2, 20, 'white');
-                    // // 遍历子弹
-                    // bulletArray.map((item, index) => {
-                    //     item.ai();
-                    //     // 删除
-                    //     if (item.x <= 0 - item.radius || item.y <= 0 - item.radius || item.x >= canvas.width || item.y >= canvas.height) {
-                    //         bulletArray.splice(index, 1);
-                    //     }
-                    //     ;
-                    //     // 判断
-                    //     eleArray.map((ele, i) => {
-                    //         let dist = Math.hypot(ele.x - item.x, ele.y - item.y);
-                    //         // 添加粒子效果
-                    //         if (dist - item.radius - ele.radius < 1) {
-                    //             for (let i = 0; i < item.radius * 8; i++) {
-                    //                 particles.push(new Particle(ele.x, ele.y, Math.random() * 4, ele.color, {
-                    //                     x: (Math.random() - 0.5) * (Math.random() * 6),
-                    //                     y: (Math.random() - 0.5) * (Math.random() * 6),
-                    //                 }, 0.97));
-                    //             }
-                    //             ;
-                    //             let a = new Audio();
-                    //             a.src = 'a.mp3';
-                    //             a.play();
-                    //             // 打中后减小
-                    //             if (ele.radius - 16 > 10) {
-                    //                 ele.radius -= 16;
-                    //                 bulletArray.splice(index, 1);
-                    //                 score += 100;
-                    //                 oScore.innerHTML = score;
-                    //             } else {
-                    //                 bulletArray.splice(index, 1);
-                    //                 eleArray.splice(i, 1);
-                    //                 score += 250;
-                    //                 oScore.innerHTML = score;
-                    //             }
-                    //             ;
-                    //         }
-                    //         ;
-                    //     });
-                    // });
-                    // // 遍历敌人
-                    // eleArray.map((item) => {
-                    //     item.ai();
-                    //     // 判断玩家和敌人碰撞 游戏结束
-                    //     let dist = Math.hypot(player.x - item.x, player.y - item.y);
-                    //     if (dist - item.radius - player.radius < 1) {
-                    //         flag = false;
-                    //         document.querySelector("audio").pause();
-                    //         Gscore.innerHTML = score;
-                    //         oGameOver.style.display = 'block';
-                    //     }
-                    //     ;
-                    // });
-                    // particles.map((item, index) => {
-                    //     if (item.alpha <= 0) {
-                    //         particles.splice(index, 1);
-                    //     } else {
-                    //         item.ai();
-                    //     }
-                    //     ;
-                    // });
+                    // 遍历子弹
+                    bulletArray.map((item, index) => {
+                        console.log(item);
+                        item.ai();
+                        // 删除
+                        // if (item.x <= 0 - item.radius || item.y <= 0 - item.radius || item.x >= canvas.width || item.y >= canvas.height) {
+                        //     bulletArray.splice(index, 1);
+                        // }
+                        ;
+                        // 判断
+                        // eleArray.map((ele, i) => {
+                        //     let dist = Math.hypot(ele.x - item.x, ele.y - item.y);
+                        //     // 添加粒子效果
+                        //     if (dist - item.radius - ele.radius < 1) {
+                        //         for (let i = 0; i < item.radius * 8; i++) {
+                        //             particles.push(new Particle(ele.x, ele.y, Math.random() * 4, ele.color, {
+                        //                 x: (Math.random() - 0.5) * (Math.random() * 6),
+                        //                 y: (Math.random() - 0.5) * (Math.random() * 6),
+                        //             }, 0.97));
+                        //         }
+                        //         ;
+                        //         let a = new Audio();
+                        //         a.src = 'a.mp3';
+                        //         a.play();
+                        //         // 打中后减小
+                        //         if (ele.radius - 16 > 10) {
+                        //             ele.radius -= 16;
+                        //             bulletArray.splice(index, 1);
+                        //             score += 100;
+                        //             oScore.innerHTML = score;
+                        //         } else {
+                        //             bulletArray.splice(index, 1);
+                        //             eleArray.splice(i, 1);
+                        //             score += 250;
+                        //             oScore.innerHTML = score;
+                        //         }
+                        //         ;
+                        //     }
+                        //     ;
+                        // });
+                    });
+                    // 遍历敌人
+                    eleArray.map((item) => {
+                        console.log('====', item);
+                        item.ai();
+                        // 判断玩家和敌人碰撞 游戏结束
+                        let dist = Math.hypot(player.x - item.x, player.y - item.y);
+                        if (dist - item.radius - player.radius < 1) {
+                            flag = false;
+                            document.querySelector("audio").pause();
+                            Gscore.innerHTML = score;
+                            oGameOver.style.display = 'block';
+                        }
+                        ;
+                    });
+                    particles.map((item, index) => {
+                        if (item.alpha <= 0) {
+                            particles.splice(index, 1);
+                        } else {
+                            item.ai();
+                        }
+                        ;
+                    });
 
                 };
                 animate();
 
-                // // 子弹
-                // window.addEventListener('mousedown', (e) => {
-                //     if (!flag) return;
-                //     let b = new Audio();
-                //     b.src = 'b.mp3';
-                //     b.play();
-                //     // 返回原点到点的线段与x轴正方向之间的平面角度
-                //     let angle = Math.atan2(e.clientY - canvas.height / 2, e.clientX - canvas.width / 2);
-                //     // 把角度转换
-                //     let velocity = {
-                //         x: Math.cos(angle) * 8,
-                //         y: Math.sin(angle) * 8
-                //     };
-                //     // 添加到数组里
-                //     bulletArray.push(new Bullet(canvas.width / 2, canvas.height / 2, 5, 'white', velocity));
-                // });
-                // // 敌人
-                // setInterval(() => {
-                //     if (!flag) return;
-                //     document.querySelector('audio').play();
-                //     // 随机大小
-                //     let radius = Math.random() * (35 - 15) + 15;
-                //     // 随机颜色
-                //     let color = `hsl(${Math.random() * 360}, 50%, 50%)`;
-                //     let x, y;
-                //     // 随机位置
-                //     if (Math.random() < 0.5) {
-                //         x = Math.random() < 0.5 ? 0 - radius : canvas.width + radius;
-                //         y = Math.random() * canvas.height + radius;
-                //     } else {
-                //         x = Math.random() * canvas.width + radius;
-                //         y = Math.random() < 0.5 ? 0 - radius : canvas.height + radius;
-                //     }
-                //     let angle = Math.atan2(canvas.height / 2 - y, canvas.width / 2 - x);
-                //     let velocity = {
-                //         x: Math.cos(angle) * 2.5,
-                //         y: Math.sin(angle) * 2.5,
-                //     };
-                //     eleArray.push(new Ele(x, y, radius, color, velocity));
-                // }, 2000);
+                // 子弹
+                window.addEventListener('mousedown', (e) => {
+                    flag = true
+                    animate()
+                    if (!flag) return;
+                    let b = new Audio();
+                    b.src = 'b.mp3';
+                    b.play();
+                    // 返回原点到点的线段与x轴正方向之间的平面角度
+                    let angle = Math.atan2(e.clientY - canvas.height / 2, e.clientX - canvas.width / 2);
+                    // 把角度转换
+                    let velocity = {
+                        x: Math.cos(angle) * 8,
+                        y: Math.sin(angle) * 8
+                    };
+                    // 添加到数组里
+                    bulletArray.push(new Bullet(canvas.width / 2, canvas.height / 2, 5, 'white', velocity));
+                });
+                // 敌人
+                setInterval(() => {
+                    if (!flag) return;
+                    document.querySelector('audio').play();
+                    // 随机大小
+                    let radius = Math.random() * (35 - 15) + 15;
+                    // 随机颜色
+                    let color = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                    let x, y;
+                    // 随机位置
+                    if (Math.random() < 0.5) {
+                        x = Math.random() < 0.5 ? 0 - radius : canvas.width + radius;
+                        y = Math.random() * canvas.height + radius;
+                    } else {
+                        x = Math.random() * canvas.width + radius;
+                        y = Math.random() < 0.5 ? 0 - radius : canvas.height + radius;
+                    }
+                    let angle = Math.atan2(canvas.height / 2 - y, canvas.width / 2 - x);
+                    let velocity = {
+                        x: Math.cos(angle) * 2.5,
+                        y: Math.sin(angle) * 2.5,
+                    };
+                    eleArray.push(new Ele(x, y, radius, color, velocity));
+                }, 2000);
             });
             document.querySelector('.resgame').addEventListener('click', () => {
                 location.reload();

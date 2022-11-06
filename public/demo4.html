@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>键盘控制div移动</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+ 
+        #ok {
+            width: 100px;
+            height: 100px;
+            background-color: orange;
+            position: absolute;
+            top: 200px;
+            left: 200px;
+        }
+    </style>
+</head>
+ 
+<body>
+    <div id="ok"></div>
+</body>
+<script>
+    var dOk = document.getElementById("ok");
+ 
+    //状态值
+    var isLeft = false;
+    var isTop = false;
+    var isRight = false;
+    var isBottom = false;
+    //定时器
+    var timer = null;
+ 
+    //键盘事件 只控制状态值
+    window.onkeydown = function (e) {
+        if (e.keyCode === 37) {
+            isLeft = true;
+        } else if (e.keyCode === 38) {
+            isTop = true;
+        } else if (e.keyCode === 39) {
+            isRight = true;
+        } else if (e.keyCode === 40) {
+            isBottom = true;
+        }
+    }
+    window.onkeyup = function (e) {
+        if (e.keyCode === 37) {
+            isLeft = false;
+        } else if (e.keyCode === 38) {
+            isTop = false;
+        } else if (e.keyCode === 39) {
+            isRight = false;
+        } else if (e.keyCode === 40) {
+            isBottom = false;
+        }
+    }
+ 
+    //定时器控制div移动
+    timer = setInterval(function () {
+        var l = dOk.offsetLeft;
+        var t = dOk.offsetTop;
+        if (isLeft) { l -= 5; }
+        if (isTop) { t -= 5; }
+        if (isRight) { l += 5; }
+        if(isBottom) { t += 5;}
+        dOk.style.left = l + `px`;
+        dOk.style.top = t + `px`;
+    }, 30)
+</script>
+ 
+</html>
