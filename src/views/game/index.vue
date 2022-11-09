@@ -11,13 +11,12 @@ import { getRandomColor, getRandomId } from '../../utils/index';
 import { io } from 'socket.io-client';
 
 const canvasRef = ref();
-const socket = ref();
+let socket = null;
+let socketId = null;
 let player = null;
 let ctx = null;
 const { innerWidth, innerHeight } = window;
 onMounted(() => {
-  initSocket();
-
   initOperate();
   canvasRef.value.width = innerWidth;
   canvasRef.value.height = innerHeight;
@@ -29,6 +28,8 @@ onMounted(() => {
   // 创建玩家
   player = createPlayer(0);
   allPlayer.set(player.options.id, player);
+  // 上传玩家属性
+  initSocket();
   console.log(player, innerWidth, innerHeight);
 });
 
@@ -38,13 +39,15 @@ const allBullet = new Map();
 /**
  * 创建玩家
  */
-const createPlayer = (type) => {
+const createPlayer = (type, { id, x, y, color } = {}) => {
+  // 判断是否存在
+  if (allPlayer.has(id)) return;
   const p = new Player(ctx, {
-    id: getRandomId(10),
-    x: innerWidth / Math.floor(Math.random() * 3 + 1),
-    y: innerHeight / Math.floor(Math.random() * 3 + 1),
+    id: id || getRandomId(10),
+    x: x || innerWidth / Math.floor(Math.random() * 3 + 1),
+    y: y || innerHeight / Math.floor(Math.random() * 3 + 1),
     size: 20,
-    color: getRandomColor(),
+    color: color || getRandomColor(),
     speed: 6,
     innerWidth,
     innerHeight
@@ -65,6 +68,7 @@ const initOperate = () => {
   window.onkeydown = function (e) {
     console.log('onkeydown-->', e.keyCode);
     renderElements(e.keyCode);
+    updatePlayer();
   };
   // 玩家点击创建球
   window.onmousedown = function (e) {
@@ -84,9 +88,10 @@ const renderElements = (keyCode) => {
     item.render();
   });
   // 渲染玩家
-  allPlayer.forEach((item) => {
-    item.update(keyCode);
-  });
+  // allPlayer.forEach((item) => {
+  //   item.update(keyCode);
+  // });
+  allPlayer.get(player.options.id).update(keyCode);
 };
 
 /**
@@ -154,12 +159,41 @@ const timingTask = () => {
 timingTask();
 
 const initSocket = () => {
-  socket.value = io.connect('ws://localhost:3000', {
+  socket = io.connect('ws://localhost:3000', {
     reconnect: true
   });
   // 连接成功
-  socket.value.on('connect', () => {
-    console.log('监听客户端连接成功-connect');
+  socket.on('connect', () => {
+    console.log('监听客户端连接成功-connect', socket, socket.id);
+    socketId = socket.id;
+    // 更新玩家信息
+    updatePlayer();
+  });
+
+  socket.on('_update', (data) => {
+    console.log('update--> 更新玩家信息', data);
+    for (const key of Object.keys(data)) {
+      console.log(key, data[key]);
+      if (data !== player.options.id) {
+        createPlayer(data[key]);
+      }
+    }
+  });
+
+  // 断开连接
+  socket.on('disconnect', (reason) => {
+    console.log(socket.connected);
+    console.log('断开连接-disconnect', reason);
+  });
+};
+
+const updatePlayer = () => {
+  socket.emit('update_player', {
+    sid: socketId,
+    id: player.options.id,
+    x: player.options.x,
+    y: player.options.y,
+    color: player.options.color
   });
 };
 </script>
