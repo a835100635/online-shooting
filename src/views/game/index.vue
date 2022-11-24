@@ -3,18 +3,23 @@
     <canvas class="canvas" ref="canvasRef" id="canvas"></canvas>
   </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Player } from '../lib/player.ts';
-import { Bullet } from '../lib/bullet.ts';
+import { useRouter } from 'vue-router';
+import { Player } from '../lib/player';
+import { Bullet } from '../lib/bullet';
 import { getRandomColor, getRandomId } from '../../utils/index';
-import { io } from 'socket.io-client';
-
+import { io, Socket } from 'socket.io-client';
+const router = useRouter();
+const playerType = {
+  player: 0,
+  enemy: 1
+};
 const canvasRef = ref();
-let socket = null;
-let socketId = null;
-let player = null;
-let ctx = null;
+let socket: Socket;
+let socketId: string;
+let player: Player | undefined;
+let ctx: CanvasRenderingContext2D;
 const { innerWidth, innerHeight } = window;
 onMounted(() => {
   initOperate();
@@ -26,11 +31,11 @@ onMounted(() => {
   ctx.fillRect(0, 0, innerWidth, innerHeight);
 
   // 创建玩家
-  player = createPlayer(0);
-  allPlayer.set(player.options.id, player);
+  player = createPlayer(playerType.player, { text: 'A' });
+  allPlayer.set(player?.options.id, player);
+  console.log('初始化玩家 ===>', player, player?.options.id, player?.options.x, player?.options.y);
   // 上传玩家属性
   initSocket();
-  console.log(player, innerWidth, innerHeight);
 });
 
 const allPlayer = new Map();
@@ -39,18 +44,19 @@ const allBullet = new Map();
 /**
  * 创建玩家
  */
-const createPlayer = (type, { id, x, y, color } = {}) => {
+const createPlayer = (type: number, { id, x, y, color, text }: any = {}) => {
   // 判断是否存在
   if (allPlayer.has(id)) return;
   const p = new Player(ctx, {
     id: id || getRandomId(10),
-    x: x || innerWidth / Math.floor(Math.random() * 3 + 1),
-    y: y || innerHeight / Math.floor(Math.random() * 3 + 1),
+    x: x || Math.round(Math.random() * innerWidth),
+    y: y || Math.round(Math.random() * innerHeight),
     size: 20,
     color: color || getRandomColor(),
-    speed: 6,
+    speed: 20,
     innerWidth,
-    innerHeight
+    innerHeight,
+    text
   });
   // 0 => 玩家 1 => 敌人
   if (type === 0) {
@@ -66,38 +72,36 @@ const createPlayer = (type, { id, x, y, color } = {}) => {
 const initOperate = () => {
   // 键盘事件 只控制状态值
   window.onkeydown = function (e) {
-    console.log('onkeydown-->', e.keyCode);
     renderElements(e.keyCode);
     updatePlayer();
   };
   // 玩家点击创建球
   window.onmousedown = function (e) {
     renderElements();
-    createBullet(player, e);
+    const bullet = createBullet(player as Player, e);
+    // 同步创建子弹
+    updateBullet(bullet);
   };
 };
 
 /**
  * 渲染所有的元素
  */
-const renderElements = (keyCode) => {
+const renderElements = (keyCode?: number) => {
   // 清空画布
   clearRect();
   // 渲染子弹
   allBullet.forEach((item) => {
     item.render();
   });
-  // 渲染玩家
-  // allPlayer.forEach((item) => {
-  //   item.update(keyCode);
-  // });
-  allPlayer.get(player.options.id).update(keyCode);
+  // 更新玩家
+  allPlayer.get(player?.options.id).update(keyCode);
 };
 
 /**
  *  创建 bullet
  */
-const createBullet = (player, e) => {
+const createBullet = (player: Player, e: MouseEvent) => {
   const { x, y } = player.options;
   // 返回原点到点的线段与x轴正方向之间的平面角度
   const location = Math.atan2(e.clientY - y, e.clientX - x);
@@ -114,6 +118,7 @@ const createBullet = (player, e) => {
     }
   });
   allBullet.set(bullet.options.id, bullet);
+  return bullet;
 };
 
 /**
@@ -124,6 +129,9 @@ const clearRect = () => {
   ctx.fillStyle = '#ccc';
 };
 
+/**
+ * 定时任务
+ */
 const timingTask = () => {
   requestAnimationFrame(timingTask);
   if (!ctx || !canvasRef.value) return;
@@ -141,12 +149,25 @@ const timingTask = () => {
     // 是否碰撞玩家
     allPlayer.forEach((pl) => {
       const dist = Math.hypot(pl.options.x - item.options.x, pl.options.y - item.options.y);
-      if (pl.options.id !== player.options.id) {
-        console.log(dist);
+      // 同步的子弹 排除自己
+      if (item.options.player === pl.options.id) return;
+
+      // 同步过来的子弹 判断是否命中
+      if (item.options.player && dist - item.options.size - pl.options.size < player?.options.size / 2) {
+        console.log('命中 === --->', item, pl);
+        // 删除敌人与子弹
+        allPlayer.delete(pl.options.id);
+        allBullet.delete(item.options.id);
+        // 同步子弹 消失
+        socket.emit('delete_bullet', item.options.id);
+        return;
       }
-      if (dist - item.options.size - pl.options.size < player.options.size / 2 && pl.options.id !== player.options.id) {
-        console.log('打中了--》', item, pl);
-        // cancelAnimationFrame(op);
+
+      if (
+        dist - item.options.size - pl.options.size < player?.options.size / 2 &&
+        pl.options.id !== player?.options.id
+      ) {
+        console.log('命中 ===>', item, pl);
         // 删除敌人与子弹
         allPlayer.delete(pl.options.id);
         allBullet.delete(item.options.id);
@@ -158,42 +179,88 @@ const timingTask = () => {
 };
 timingTask();
 
+/**
+ * socket 事件
+ */
 const initSocket = () => {
-  socket = io.connect('ws://localhost:3000', {
-    reconnect: true
+  console.log('initSocket ===> ');
+  socket = io('ws://localhost:3000', {
+    // reconnect: true
   });
   // 连接成功
   socket.on('connect', () => {
-    console.log('监听客户端连接成功-connect', socket, socket.id);
+    console.log('socket connect ===>');
+    router.replace({
+      path: '/game',
+      query: {
+        sid: socket.id,
+        pid: player?.options.id
+      }
+    });
     socketId = socket.id;
     // 更新玩家信息
     updatePlayer();
   });
 
   socket.on('_update', (data) => {
-    console.log('update--> 更新玩家信息', data);
+    console.log('update player ===>', data);
+    clearRect();
     for (const key of Object.keys(data)) {
-      console.log(key, data[key]);
-      if (data !== player.options.id) {
-        createPlayer(data[key]);
+      if (data[key].id !== player?.options.id) {
+        const p = allPlayer.get(data[key].id);
+        if (p) {
+          Object.assign(p.options, data[key]);
+          p.update();
+        } else {
+          createPlayer(playerType.enemy, data[key]);
+        }
       }
     }
+  });
+
+  socket.on('_update_bullet', (data) => {
+    console.log('update bullet ===>', data, allBullet);
+    const { id, x, y, size, color, speed, location, player } = data;
+    const bullet = new Bullet(ctx, { id, x, y, size, color, speed, location, player });
+    allBullet.set(id, bullet);
+  });
+
+  // 同步子弹 打中后 删除该子弹
+  socket.on('_delete_bullet', (bulletId) => {
+    console.log('delete bullet ===>', bulletId);
+    allBullet.delete(bulletId);
   });
 
   // 断开连接
   socket.on('disconnect', (reason) => {
     console.log(socket.connected);
-    console.log('断开连接-disconnect', reason);
+    console.log('socket disconnect ===>', reason);
   });
 };
 
+/**
+ * 同步玩家信息
+ */
 const updatePlayer = () => {
+  console.log('sync player ===>', player);
   socket.emit('update_player', {
     sid: socketId,
-    id: player.options.id,
-    x: player.options.x,
-    y: player.options.y,
-    color: player.options.color
+    id: player?.options.id,
+    x: player?.options.x,
+    y: player?.options.y,
+    color: player?.options.color
+  });
+};
+
+/**
+ * 同步
+ */
+const updateBullet = (bullet: Bullet) => {
+  console.log('sync bullet ===>', bullet);
+  socket.emit('update_bullet', {
+    sid: socketId,
+    player: player?.options.id,
+    ...bullet.options
   });
 };
 </script>
