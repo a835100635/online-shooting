@@ -184,7 +184,7 @@ timingTask();
  */
 const initSocket = () => {
   console.log('initSocket ===> ');
-  socket = io('ws://localhost:3000', {
+  socket = io('ws://124.222.188.206:3000', {
     // reconnect: true
   });
   // 连接成功
