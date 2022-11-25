@@ -20,5 +20,5 @@ const random = () => {
  * @returns id {string} 随机id
  */
 export const getRandomId = (length?: number) => {
-  return (Math.random() + new Date().getTime()).toString(32).slice(0, length || 10);
+  return (Math.random() + new Date().getTime()).toString(32).slice(0, length || 13);
 };

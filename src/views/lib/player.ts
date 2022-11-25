@@ -2,7 +2,7 @@
 
 export class Player {
 
-  private options: any;
+  public options: any;
   private ctx: any;
 
   constructor(ctx: any, options: any) {
@@ -15,12 +15,20 @@ export class Player {
    * 渲染
    */
   render() {
-    const { x, y, size, color } = this.options;
+    const { x, y, size, color, text } = this.options;
     const { ctx } = this;
     ctx.beginPath();
     ctx.arc(x, y, size, 0, 2 * Math.PI, false);
     ctx.fillStyle = color;
     ctx.fill();
+
+    if (text) {
+      ctx.font = '20px Arial';
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'center';
+      ctx.fillText(text,  x+size/2-10, y+size/2-4);
+    }
+
   }
 
   /**
