@@ -184,9 +184,7 @@ timingTask();
  */
 const initSocket = () => {
   console.log('initSocket ===> ');
-  socket = io('ws://124.222.188.206:3000', {
-    // reconnect: true
-  });
+  socket = io('/online');
   // 连接成功
   socket.on('connect', () => {
     console.log('socket connect ===>');
@@ -202,20 +200,15 @@ const initSocket = () => {
     updatePlayer();
   });
 
+  socket.on('connect_update_player', (data) => {
+    console.log('connect_update_player ===>', data);
+    parseSyncData(data);
+  });
+
   socket.on('_update', (data) => {
     console.log('update player ===>', data);
     clearRect();
-    for (const key of Object.keys(data)) {
-      if (data[key].id !== player?.options.id) {
-        const p = allPlayer.get(data[key].id);
-        if (p) {
-          Object.assign(p.options, data[key]);
-          p.update();
-        } else {
-          createPlayer(playerType.enemy, data[key]);
-        }
-      }
-    }
+    parseSyncData(data);
   });
 
   socket.on('_update_bullet', (data) => {
@@ -231,11 +224,37 @@ const initSocket = () => {
     allBullet.delete(bulletId);
   });
 
+  // 玩家下线
+  socket.on('offline_player', (playerInfo) => {
+    console.log('player offline ===>', playerInfo);
+    // 下线玩家 删除 TODO: 提示玩家下线
+    if (allPlayer.has(playerInfo.id)) {
+      allPlayer.delete(playerInfo.id);
+    }
+  });
+
   // 断开连接
   socket.on('disconnect', (reason) => {
     console.log(socket.connected);
     console.log('socket disconnect ===>', reason);
   });
+};
+
+/**
+ * parse sync data
+ */
+const parseSyncData = (data: any) => {
+  for (const key of Object.keys(data)) {
+    if (data[key].id !== player?.options.id) {
+      const p = allPlayer.get(data[key].id);
+      if (p) {
+        Object.assign(p.options, data[key]);
+        p.update();
+      } else {
+        createPlayer(playerType.enemy, data[key]);
+      }
+    }
+  }
 };
 
 /**
