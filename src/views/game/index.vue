@@ -1,5 +1,9 @@
 <template>
   <div class="main-wrap" id="main-wrap">
+    <div class="message-block">
+      <div class="status">游戏状态：{{ isPlay ? '游戏中' : '未开始' }}</div>
+      <div class="score">分数：{{ score }}</div>
+    </div>
     <canvas class="canvas" ref="canvasRef" id="canvas"></canvas>
   </div>
 </template>
@@ -22,6 +26,10 @@ let player: Player | undefined;
 let ctx: CanvasRenderingContext2D;
 const { innerWidth, innerHeight } = window;
 onMounted(() => {
+  // 自定义游戏名称 取第一个
+  // eslint-disable-next-line no-alert
+  const playerName = window.prompt('开始游戏前,请输入一个长度的字符作为游戏名称', 'A');
+
   initOperate();
   canvasRef.value.width = innerWidth;
   canvasRef.value.height = innerHeight;
@@ -31,15 +39,21 @@ onMounted(() => {
   ctx.fillRect(0, 0, innerWidth, innerHeight);
 
   // 创建玩家
-  player = createPlayer(playerType.player, { text: 'A' });
+  player = createPlayer(playerType.player, { text: `${playerName}`.trim()[0] });
   allPlayer.set(player?.options.id, player);
   console.log('初始化玩家 ===>', player, player?.options.id, player?.options.x, player?.options.y);
   // 上传玩家属性
   initSocket();
 });
 
+// 所有玩家集合
 const allPlayer = new Map();
+// 所有子弹集合
 const allBullet = new Map();
+// 分数
+const score = ref(0);
+// 是否开始开始优先
+const isPlay = ref(false);
 
 /**
  * 创建玩家
@@ -71,12 +85,12 @@ const createPlayer = (type: number, { id, x, y, color, text }: any = {}) => {
  */
 const initOperate = () => {
   // 键盘事件 只控制状态值
-  window.onkeydown = function (e) {
+  window.onkeydown = function (e: KeyboardEvent) {
     renderElements(e.keyCode);
     updatePlayer();
   };
   // 玩家点击创建球
-  window.onmousedown = function (e) {
+  window.onmousedown = function (e: MouseEvent) {
     renderElements();
     const bullet = createBullet(player as Player, e);
     // 同步创建子弹
@@ -130,64 +144,18 @@ const clearRect = () => {
 };
 
 /**
- * 定时任务
- */
-const timingTask = () => {
-  requestAnimationFrame(timingTask);
-  if (!ctx || !canvasRef.value) return;
-  clearRect();
-  allPlayer.forEach((item) => {
-    item.render();
-  });
-  allBullet.forEach((item) => {
-    const { x, y } = item.options;
-    // 边缘判断 出边界线外删除
-    if (x >= innerWidth || x <= 0 || y >= innerHeight || y <= 0) {
-      allBullet.delete(item.options.id);
-    }
-
-    // 是否碰撞玩家
-    allPlayer.forEach((pl) => {
-      const dist = Math.hypot(pl.options.x - item.options.x, pl.options.y - item.options.y);
-      // 同步的子弹 排除自己
-      if (item.options.player === pl.options.id) return;
-
-      // 同步过来的子弹 判断是否命中
-      if (item.options.player && dist - item.options.size - pl.options.size < player?.options.size / 2) {
-        console.log('命中 === --->', item, pl);
-        // 删除敌人与子弹
-        allPlayer.delete(pl.options.id);
-        allBullet.delete(item.options.id);
-        // 同步子弹 消失
-        socket.emit('delete_bullet', item.options.id);
-        return;
-      }
-
-      if (
-        dist - item.options.size - pl.options.size < player?.options.size / 2 &&
-        pl.options.id !== player?.options.id
-      ) {
-        console.log('命中 ===>', item, pl);
-        // 删除敌人与子弹
-        allPlayer.delete(pl.options.id);
-        allBullet.delete(item.options.id);
-      }
-    });
-
-    item.update();
-  });
-};
-timingTask();
-
-/**
  * socket 事件
  */
+// eslint-disable-next-line no-unused-vars
 const initSocket = () => {
   console.log('initSocket ===> ');
   socket = io('/online');
   // 连接成功
   socket.on('connect', () => {
     console.log('socket connect ===>');
+    // 设置游戏状态
+    isPlay.value = true;
+    // 把socket id 和玩家id 设置在url中
     router.replace({
       path: '/game',
       query: {
@@ -241,6 +209,7 @@ const initSocket = () => {
 };
 
 /**
+ * 解析同步玩家信息
  * parse sync data
  */
 const parseSyncData = (data: any) => {
@@ -262,13 +231,14 @@ const parseSyncData = (data: any) => {
  */
 const updatePlayer = () => {
   console.log('sync player ===>', player);
-  socket.emit('update_player', {
-    sid: socketId,
-    id: player?.options.id,
-    x: player?.options.x,
-    y: player?.options.y,
-    color: player?.options.color
-  });
+  socket &&
+    socket.emit('update_player', {
+      sid: socketId,
+      id: player?.options.id,
+      x: player?.options.x,
+      y: player?.options.y,
+      color: player?.options.color
+    });
 };
 
 /**
@@ -276,17 +246,101 @@ const updatePlayer = () => {
  */
 const updateBullet = (bullet: Bullet) => {
   console.log('sync bullet ===>', bullet);
-  socket.emit('update_bullet', {
-    sid: socketId,
-    player: player?.options.id,
-    ...bullet.options
+  socket &&
+    socket.emit('update_bullet', {
+      sid: socketId,
+      player: player?.options.id,
+      ...bullet.options
+    });
+};
+
+/**
+ * 击中敌人
+ */
+const hitThePlayer = (pl: Player, bullet: Bullet) => {
+  console.log('命中敌人 === --->', pl, bullet);
+  // 分数增加
+  score.value += 10;
+  // 删除敌人与子弹
+  allPlayer.delete(pl.options.id);
+  allBullet.delete(bullet.options.id);
+};
+
+/**
+ * 玩家被击中
+ */
+const beingHit = (pl: Player, bullet: Bullet) => {
+  console.log('被敌人命中 === --->', pl, bullet);
+  score.value = 0;
+  isPlay.value = false;
+  // 删除敌人与子弹
+  allPlayer.delete(pl.options.id);
+  allBullet.delete(bullet.options.id);
+  // 同步子弹 消失
+  socket && socket.emit('delete_bullet', bullet.options.id);
+};
+
+/**
+ * 定时任务
+ */
+const timingTask = () => {
+  requestAnimationFrame(timingTask);
+  if (!ctx || !canvasRef.value) return;
+  // 清空画布
+  clearRect();
+  // 重新渲染
+  allPlayer.forEach((pl: Player) => {
+    pl.render();
+  });
+  // 遍历子弹
+  allBullet.forEach((item: Bullet) => {
+    const { x, y } = item.options;
+    // 边缘判断 出边界线外删除
+    if (x >= innerWidth || x <= 0 || y >= innerHeight || y <= 0) {
+      allBullet.delete(item.options.id);
+    }
+
+    // 是否碰撞玩家
+    allPlayer.forEach((pl: Player) => {
+      const dist = Math.hypot(pl.options.x - item.options.x, pl.options.y - item.options.y);
+      // 同步的子弹 排除自己
+      if (item.options.player === pl.options.id) return;
+
+      // 同步过来的子弹 判断是否命中
+      if (item.options.player && dist - item.options.size - pl.options.size < player?.options.size / 2) {
+        beingHit(pl, item);
+        return;
+      }
+
+      if (
+        dist - item.options.size - pl.options.size < player?.options.size / 2 &&
+        pl.options.id !== player?.options.id
+      ) {
+        hitThePlayer(pl, item);
+      }
+    });
+
+    item.update();
   });
 };
+timingTask();
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .main-wrap {
   height: 100%;
   width: 100%;
+  position: relative;
+  .message-block {
+    position: absolute;
+    top: 0;
+    left: 0;
+    .status {
+      font-size: 20px;
+    }
+    .score {
+      font-size: 20px;
+    }
+  }
 }
 </style>
