@@ -28,7 +28,8 @@ const { innerWidth, innerHeight } = window;
 onMounted(() => {
   // 自定义游戏名称 取第一个
   // eslint-disable-next-line no-alert
-  const playerName = window.prompt('开始游戏前,请输入一个长度的字符作为游戏名称', 'A');
+  // const playerName = window.prompt('开始游戏前,请输入一个长度的字符作为游戏名称', 'A');
+  const playerName = 'A';
 
   initOperate();
   canvasRef.value.width = innerWidth;
@@ -151,7 +152,7 @@ const clearRect = () => {
 // eslint-disable-next-line no-unused-vars
 const initSocket = () => {
   console.log('initSocket ===> ');
-  socket = io('/online');
+  socket = io(`ws://${process.env.VUE_APP_SOCKET_URL}:${process.env.VUE_APP_SOCKET_PORT}/online`);
   // 连接成功
   socket.on('connect', () => {
     console.log('socket connect ===>');
