@@ -55,4 +55,24 @@ export class Player {
     this.render();
   }
 
+  /**
+   * 边缘计算
+   * @param keyCode 
+   */
+  verifyPosition(keyCode: number) {
+    const { innerWidth, innerHeight, size, x, y, speed } = this.options;
+    switch (keyCode) {
+      case 37:
+        return x - speed > size;
+      case 38:
+        return y - speed > size;
+      case 39:
+        return x + speed < innerWidth;
+      case 40:
+        return y + speed < innerHeight;
+      default:
+        return false;
+    }
+  }
+
 }

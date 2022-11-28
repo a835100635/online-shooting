@@ -86,8 +86,10 @@ const createPlayer = (type: number, { id, x, y, color, text }: any = {}) => {
 const initOperate = () => {
   // 键盘事件 只控制状态值
   window.onkeydown = function (e: KeyboardEvent) {
-    renderElements(e.keyCode);
-    updatePlayer();
+    if (player?.verifyPosition(e.keyCode)) {
+      renderElements(e.keyCode);
+      updatePlayer();
+    }
   };
   // 玩家点击创建球
   window.onmousedown = function (e: MouseEvent) {
