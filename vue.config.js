@@ -8,7 +8,7 @@ module.exports = {
     open: true,
     proxy: {
       'socket.io': {
-        target: 'ws://localhost:8616',
+        target: `ws://${process.env.VUE_APP_SOCKET_URL}:${process.env.VUE_APP_SOCKET_PORT}`,
         ws: true,
         changeOrigin: true
       }
