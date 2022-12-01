@@ -6,13 +6,6 @@ module.exports = {
     host: '0.0.0.0',
     port: 8617,
     open: true
-    // proxy: {
-    //   'socket.io': {
-    //     target: `ws://${process.env.VUE_APP_SOCKET_URL}:${process.env.VUE_APP_SOCKET_PORT}`,
-    //     ws: true,
-    //     changeOrigin: true
-    //   }
-    // }
   },
   // 取消生成map文件
   productionSourceMap: false,
