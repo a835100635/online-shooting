@@ -73,7 +73,7 @@ const createPlayer = (type: number, { id, x, y, color, text }: any = {}) => {
     innerHeight,
     text
   });
-  // 0 => 玩家 1 => 敌人
+  // 0 => 玩家 1 => 敌人xw
   if (type === 0) {
     return p;
   } else {
@@ -122,6 +122,7 @@ const createBullet = (player: Player, e: MouseEvent) => {
   const { x, y } = player.options;
   // 返回原点到点的线段与x轴正方向之间的平面角度
   const location = Math.atan2(e.clientY - y, e.clientX - x);
+  console.log(location);
   const bullet = new Bullet(ctx, {
     id: getRandomId(),
     x,
